@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מערכת לבדיקת מבחני תקשורת וחברה</title>
+    <title>מערכת לבדיקת מבחני תקשורת וחברה - גרסה פדגוגית</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -16,190 +17,358 @@
             overflow: hidden;
         }
 
-        /* עמודה ימנית - 20% - תפריט וטעינה */
+        /* --- צד ימין: תפריט --- */
         #sidebar {
             width: 20%;
-            background-color: #ffffff;
-            border-left: 1px solid #ddd;
+            background-color: #2c3e50;
+            color: white;
             padding: 20px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             gap: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
         }
 
-        /* עמודה שמאלית - 70% (השארנו 10% רווח בצד שמאל לאסתטיקה או שימוש עתידי) */
-        #main-display {
-            width: 70%;
-            padding: 40px;
-            box-sizing: border-box;
-            overflow-y: auto;
-            background-color: #fff;
-            margin: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        h1, h2 {
-            color: #2c3e50;
-            margin-top: 0;
-        }
-
-        .control-group {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #eee;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #555;
-        }
-
+        #sidebar h2 { color: #ecf0f1; border-bottom: 1px solid #34495e; padding-bottom: 10px; }
+        
+        .control-group { margin-bottom: 20px; }
+        .control-group label { display: block; margin-bottom: 8px; color: #bdc3c7; }
+        
         input[type="file"] {
             width: 100%;
-            padding: 10px;
-            background: #fff;
-            border: 1px dashed #ccc;
+            padding: 8px;
+            background: #34495e;
+            color: white;
+            border: 1px solid #7f8c8d;
             border-radius: 4px;
-            cursor: pointer;
         }
 
         button#analyze-btn {
-            background-color: #3498db;
+            background-color: #27ae60;
             color: white;
             border: none;
             padding: 15px;
             font-size: 1.1em;
             border-radius: 6px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: all 0.3s;
             font-weight: bold;
             width: 100%;
+            margin-top: auto;
+        }
+        button#analyze-btn:hover { background-color: #2ecc71; transform: translateY(-2px); }
+        button#analyze-btn:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; }
+
+        /* --- צד שמאל: אזור עבודה --- */
+        #main-display {
+            width: 80%; /* הרחבתי ל-80% לניצול מסך */
+            padding: 30px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            background-color: #ecf0f1;
         }
 
-        button#analyze-btn:hover {
-            background-color: #2980b9;
+        /* --- כרטיסי ניתוח --- */
+        .analysis-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-right: 5px solid #3498db;
         }
 
-        button#analyze-btn:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-
-        /* עיצוב אזור התצוגה של המבחן */
-        #exam-content {
-            line-height: 1.6;
-            color: #333;
-        }
-        
-        #exam-content h1, #exam-content h2, #exam-content h3 {
+        .section-title {
+            font-size: 1.2em;
             color: #2c3e50;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        #status-msg {
-            margin-top: 10px;
-            font-size: 0.9em;
-            color: #7f8c8d;
+        /* --- אזור המחוון (Rubric) --- */
+        .rubric-item {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
         }
+
+        .rubric-header {
+            font-weight: bold;
+            color: #d35400;
+            margin-bottom: 5px;
+        }
+
+        .editable-area {
+            width: 100%;
+            min-height: 60px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+
+        .btn-confirm {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .btn-confirm:hover { background-color: #2980b9; }
+        .btn-confirm.confirmed {
+            background-color: #27ae60;
+            cursor: default;
+        }
+
+        /* --- אזור תשובת התלמיד והערכה --- */
+        .student-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px dashed #ddd;
+            opacity: 0.5; /* התחלתי כלא פעיל עד לאישור המחוון */
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .student-section.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .ai-feedback {
+            background-color: #e8f6f3;
+            border: 1px solid #a2d9ce;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            color: #16a085;
+        }
+
+        .score-box {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 10px;
+            text-align: left;
+        }
+
+        .original-text {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
     </style>
 </head>
 <body>
 
     <div id="sidebar">
-        <h2>מערכת בדיקה</h2>
+        <h2><i class="fas fa-graduation-cap"></i> בדיקת מבחנים</h2>
         
         <div class="control-group">
-            <label for="file-upload">טעינת מבחן (DOCX / HTML):</label>
+            <label for="file-upload">טעינת קובץ (DOCX/HTML)</label>
             <input type="file" id="file-upload" accept=".html, .docx">
-            <div id="status-msg">לא נבחר קובץ</div>
+            <div id="status-msg" style="margin-top:5px; font-size:0.8em;">לא נבחר קובץ</div>
         </div>
 
-        <div style="flex-grow: 1;"></div> <button id="analyze-btn" disabled>התחל בניתוח המבחן 🚀</button>
+        <div style="font-size: 0.9em; line-height: 1.5; color: #bdc3c7;">
+            <p>1. המערכת תפרק את השאלות לפי מילות מטלה (הצג, נמק).</p>
+            <p>2. אשר/י את המחוון המוצע.</p>
+            <p>3. ערוך/י את תשובת התלמיד במידת הצורך.</p>
+            <p>4. קבל/י ציון והערכה.</p>
+        </div>
+
+        <button id="analyze-btn" disabled>התחל בניתוח <i class="fas fa-play"></i></button>
     </div>
 
     <div id="main-display">
-        <div id="exam-content">
-            <h2 style="text-align: center; color: #bbb;">אנא טען קובץ מבחן כדי להציגו כאן</h2>
+        <div id="content-area">
+            <div style="text-align: center; margin-top: 100px; color: #7f8c8d;">
+                <i class="fas fa-file-alt" style="font-size: 4em; margin-bottom: 20px;"></i>
+                <h2>אנא טען קובץ מבחן כדי להתחיל</h2>
+            </div>
         </div>
     </div>
 
     <script>
+        // אלמנטים
         const fileInput = document.getElementById('file-upload');
-        const examContentDiv = document.getElementById('exam-content');
+        const contentArea = document.getElementById('content-area');
         const statusMsg = document.getElementById('status-msg');
         const analyzeBtn = document.getElementById('analyze-btn');
 
-        let loadedContent = ""; // משתנה לשמירת הטקסט לניתוח עתידי
+        let rawText = "";
 
-        // האזנה לטעינת קובץ
+        // --- לוגיקת טעינת קבצים (זהה לקוד הקודם) ---
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
-            statusMsg.textContent = `טוען: ${file.name}...`;
+            statusMsg.textContent = 'טוען...';
             
-            // בדיקה האם זה HTML או DOCX
             if (file.name.endsWith('.docx')) {
-                parseDocx(file);
-            } else if (file.name.endsWith('.html') || file.name.endsWith('.htm')) {
-                parseHtml(file);
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    mammoth.extractRawText({arrayBuffer: evt.target.result})
+                        .then(result => {
+                            rawText = result.value;
+                            previewFile(rawText);
+                        })
+                        .catch(err => console.error(err));
+                };
+                reader.readAsArrayBuffer(file);
             } else {
-                alert('פורמט לא נתמך. אנא בחר קובץ DOCX או HTML.');
-                statusMsg.textContent = 'שגיאה בפורמט';
+                // הנחה לפשטות: קובץ טקסט/HTML
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    rawText = evt.target.result; // בפועל צריך לנקות תגיות HTML אם זה HTML
+                    previewFile(rawText);
+                };
+                reader.readAsText(file);
             }
         });
 
-        // פונקציה לטיפול בקובץ DOCX
-        function parseDocx(file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const arrayBuffer = event.target.result;
-                
-                mammoth.convertToHtml({arrayBuffer: arrayBuffer})
-                    .then(displayResult)
-                    .catch(handleError);
-            };
-            reader.readAsArrayBuffer(file);
+        function previewFile(text) {
+            statusMsg.textContent = 'הקובץ נטען ✅';
+            statusMsg.style.color = '#2ecc71';
+            contentArea.innerHTML = `<div class="analysis-card"><h3>תצוגה מקדימה:</h3><p>${text.substring(0, 500)}...</p></div>`;
+            analyzeBtn.disabled = false;
         }
 
-        // פונקציה לטיפול בקובץ HTML
-        function parseHtml(file) {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const htmlContent = event.target.result;
-                displayResult({value: htmlContent}); // מבנה תואם לתוצאה של mammoth
-            };
-            reader.readAsText(file); // HTML קוראים כטקסט
-        }
-
-        // הצגת התוצאה במסך
-        function displayResult(result) {
-            loadedContent = result.value;
-            examContentDiv.innerHTML = loadedContent;
-            statusMsg.textContent = 'הקובץ נטען בהצלחה ✅';
-            statusMsg.style.color = 'green';
-            analyzeBtn.disabled = false; // אפשור הכפתור
-        }
-
-        function handleError(err) {
-            console.error(err);
-            statusMsg.textContent = 'שגיאה בקריאת הקובץ';
-            statusMsg.style.color = 'red';
-        }
-
-        // כפתור התחלת ניתוח
+        // --- לוגיקת הניתוח (SIMULATION) ---
         analyzeBtn.addEventListener('click', function() {
-            // כאן יכנס הלוגיקה העתידית (שליחה ל-AI או ניתוח מקומי)
-            alert('הניתוח מתחיל... (בשלב הבא נחבר את זה למנוע בדיקה)');
-            console.log("תוכן המבחן שנשלח לבדיקה:", loadedContent);
+            contentArea.innerHTML = '<div style="text-align:center;"><i class="fas fa-spinner fa-spin fa-2x"></i><p>מבצע פירוק דידקטי וניתוח AI...</p></div>';
+            
+            // כאן תתבצע קריאה ל-API אמיתי. כרגע נשתמש במידע דמו (Mock Data)
+            setTimeout(() => {
+                renderAnalysis(mockAIResponse);
+            }, 1500);
         });
+
+        // --- נתוני דמו המדמים תשובה מה-AI ---
+        const mockAIResponse = [
+            {
+                id: 1,
+                question_text: "הסבר מהי קביעת סדר יום (Agenda Setting) והדגם כיצד היא באה לידי ביטוי בסיקור המלחמה.",
+                sub_tasks: [
+                    {
+                        verb: "הסבר",
+                        instruction: "מהי קביעת סדר יום",
+                        suggested_rubric: "התלמיד צריך להגדיר את התיאוריה: התקשורת לא אומרת לנו מה לחשוב, אלא על מה לחשוב. הבלטת נושאים מסוימים משפיעה על חשיבותם בעיני הציבור.",
+                    },
+                    {
+                        verb: "הדגם",
+                        instruction: "כיצד היא באה לידי ביטוי בסיקור המלחמה",
+                        suggested_rubric: "דוגמה קונקרטית: עיסוק נרחב בחטופים שגורם לציבור לראות בכך את הנושא החשוב ביותר, לעומת התעלמות מנושאים כלכליים.",
+                    }
+                ],
+                student_answer_raw: "קביעת סדר יום אומרת שהחדשות קובעות לנו על מה לדבר. למשל במלחמה כל הזמן מראים את החזית בצפון אז אנחנו דואגים מזה מאוד.",
+                ai_evaluation: "התלמיד נתן הגדרה חלקית (חסר האלמנט של 'חשיבות'). הדוגמה טובה ונכונה."
+            }
+        ];
+
+        // --- פונקציית הרינדור הראשית ---
+        function renderAnalysis(data) {
+            contentArea.innerHTML = ''; // ניקוי
+
+            data.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'analysis-card';
+                
+                // כותרת השאלה
+                card.innerHTML = `<div class="section-title"><i class="fas fa-question-circle"></i> שאלה ${index + 1}</div>
+                                  <div style="font-size:1.1em; margin-bottom:20px; font-weight:bold;">${q.question_text}</div>`;
+
+                // יצירת אזור המחוון (Rubric)
+                const rubricContainer = document.createElement('div');
+                let confirmedCount = 0; // למעקב כמה סעיפים אושרו
+
+                q.sub_tasks.forEach((task, i) => {
+                    const taskDiv = document.createElement('div');
+                    taskDiv.className = 'rubric-item';
+                    
+                    const taskId = `q${index}_t${i}`;
+                    
+                    taskDiv.innerHTML = `
+                        <div class="rubric-header"><i class="fas fa-list-ul"></i> סעיף ${i+1}: ${task.verb} - ${task.instruction}</div>
+                        <label>מחוון מוצע (AI):</label>
+                        <textarea id="rubric_${taskId}" class="editable-area">${task.suggested_rubric}</textarea>
+                        <button class="btn-confirm" onclick="confirmRubric('${taskId}', this)">
+                            <i class="fas fa-check"></i> אשר מחוון זה
+                        </button>
+                    `;
+                    rubricContainer.appendChild(taskDiv);
+                });
+                
+                card.appendChild(rubricContainer);
+
+                // יצירת אזור תשובת התלמיד (מוסתר בהתחלה)
+                const studentDiv = document.createElement('div');
+                studentDiv.id = `student_section_${index}`;
+                studentDiv.className = 'student-section';
+                studentDiv.innerHTML = `
+                    <div class="section-title"><i class="fas fa-user-edit"></i> תשובת התלמיד והערכה</div>
+                    <div class="original-text">תשובה מקורית: "${q.student_answer_raw}"</div>
+                    
+                    <label>ערוך את תשובת התלמיד (אם חסרות מילים או הניסוח לא ברור):</label>
+                    <textarea id="student_ans_${index}" class="editable-area">${q.student_answer_raw}</textarea>
+                    
+                    <button class="btn-confirm" onclick="evaluateAnswer(${index}, '${q.ai_evaluation}')">
+                        <i class="fas fa-gavel"></i> אשר עריכה וחשב ציון
+                    </button>
+                    
+                    <div id="result_${index}" style="display:none;"></div>
+                `;
+
+                card.appendChild(studentDiv);
+                contentArea.appendChild(card);
+            });
+        }
+
+        // --- לוגיקה: אישור מחוון ---
+        window.confirmRubric = function(id, btn) {
+            const textarea = document.getElementById(`rubric_${id}`);
+            textarea.disabled = true;
+            textarea.style.backgroundColor = "#e8f6f3"; // ירוק בהיר
+            btn.innerHTML = '<i class="fas fa-check-double"></i> המחוון אושר';
+            btn.classList.add('confirmed');
+            
+            // בדיקה האם כל הסעיפים בשאלה זו אושרו כדי לפתוח את אזור התלמיד
+            // (לצורך הפשטות כאן, נפתח מיד את אזור התלמיד של השאלה הרלוונטית)
+            const questionIndex = id.split('_')[0].replace('q', '');
+            document.getElementById(`student_section_${questionIndex}`).classList.add('active');
+        };
+
+        // --- לוגיקה: הערכת תשובה וציון ---
+        window.evaluateAnswer = function(index, aiFeedback) {
+            const textArea = document.getElementById(`student_ans_${index}`);
+            textArea.disabled = true;
+            
+            const resultDiv = document.getElementById(`result_${index}`);
+            
+            // סימולציה של חישוב ציון על סמך הטקסט הסופי
+            // במערכת אמיתית: שולחים את הטקסט הערוך + המחוון המאושר ל-AI
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="ai-feedback">
+                    <strong><i class="fas fa-robot"></i> ניתוח מערכת (מבוסס על המחוון שאושר):</strong><br>
+                    ${aiFeedback}
+                </div>
+                <div class="score-box">
+                    ציון מוצע: <span style="color: #27ae60;">85/100</span>
+                </div>
+            `;
+        };
 
     </script>
 </body>
