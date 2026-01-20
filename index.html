@@ -3,373 +3,392 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מערכת לבדיקת מבחני תקשורת וחברה - גרסה פדגוגית</title>
+    <title>מערכת לבדיקת מבחני תקשורת - מבוסס הכל בכף</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
+
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f6f8;
-            height: 100vh;
-            display: flex;
-            overflow: hidden;
+        :root {
+            --primary: #2c3e50;
+            --accent: #e67e22; /* כתום - מזכיר את צבעי הכל בכף */
+            --light-bg: #f8f9fa;
+            --sidebar-w: 20%;
         }
 
-        /* --- צד ימין: תפריט --- */
-        #sidebar {
-            width: 20%;
-            background-color: #2c3e50;
-            color: white;
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; background: var(--light-bg); }
+        
+        /* סרגל צד - 20% */
+        aside {
+            width: var(--sidebar-w);
+            background: white;
+            border-left: 1px solid #ddd;
             padding: 20px;
-            box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            gap: 15px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            z-index: 10;
         }
 
-        #sidebar h2 { color: #ecf0f1; border-bottom: 1px solid #34495e; padding-bottom: 10px; }
-        
-        .control-group { margin-bottom: 20px; }
-        .control-group label { display: block; margin-bottom: 8px; color: #bdc3c7; }
-        
-        input[type="file"] {
-            width: 100%;
-            padding: 8px;
-            background: #34495e;
-            color: white;
-            border: 1px solid #7f8c8d;
-            border-radius: 4px;
+        /* מסך ראשי - 70% (השארנו שוליים) */
+        main {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            max-width: 80%;
+            margin: 0 auto;
         }
 
-        button#analyze-btn {
-            background-color: #27ae60;
+        h2 { margin: 0 0 10px 0; font-size: 1.2rem; color: var(--primary); }
+        
+        .input-group label { display: block; font-size: 0.9rem; margin-bottom: 5px; font-weight: bold; }
+        .input-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        
+        button.primary-btn {
+            background-color: var(--primary);
             color: white;
             border: none;
-            padding: 15px;
-            font-size: 1.1em;
+            padding: 12px;
             border-radius: 6px;
             cursor: pointer;
-            transition: all 0.3s;
-            font-weight: bold;
+            font-size: 1rem;
+            transition: 0.2s;
             width: 100%;
-            margin-top: auto;
         }
-        button#analyze-btn:hover { background-color: #2ecc71; transform: translateY(-2px); }
-        button#analyze-btn:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; }
+        button.primary-btn:hover { background-color: #34495e; }
+        button.primary-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 
-        /* --- צד שמאל: אזור עבודה --- */
-        #main-display {
-            width: 80%; /* הרחבתי ל-80% לניצול מסך */
-            padding: 30px;
-            box-sizing: border-box;
-            overflow-y: auto;
-            background-color: #ecf0f1;
-        }
-
-        /* --- כרטיסי ניתוח --- */
-        .analysis-card {
+        /* כרטיסי שאלות */
+        .question-card {
             background: white;
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 25px;
             margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border-right: 5px solid #3498db;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-right: 5px solid var(--accent);
         }
 
-        .section-title {
-            font-size: 1.2em;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .q-text { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #333; }
 
-        /* --- אזור המחוון (Rubric) --- */
-        .rubric-item {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
+        /* סעיפי פירוק */
+        .breakdown-item {
+            background: #fff8e1;
+            border: 1px solid #ffe0b2;
             padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 8px;
+            margin-bottom: 10px;
+            border-radius: 6px;
         }
 
-        .rubric-header {
-            font-weight: bold;
-            color: #d35400;
-            margin-bottom: 5px;
+        .tag {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 8px;
         }
 
-        .editable-area {
+        textarea {
             width: 100%;
             min-height: 60px;
-            padding: 10px;
-            border: 1px solid #ccc;
+            margin-top: 10px;
+            padding: 8px;
+            border: 1px solid #ddd;
             border-radius: 4px;
             font-family: inherit;
-            margin-bottom: 10px;
-            background-color: #fff;
         }
 
-        .btn-confirm {
-            background-color: #3498db;
+        .approve-btn {
+            background: #27ae60;
             color: white;
             border: none;
-            padding: 8px 15px;
+            padding: 5px 10px;
             border-radius: 4px;
+            font-size: 0.9rem;
             cursor: pointer;
-            font-size: 0.9em;
+            margin-top: 5px;
         }
-        .btn-confirm:hover { background-color: #2980b9; }
-        .btn-confirm.confirmed {
-            background-color: #27ae60;
-            cursor: default;
-        }
+        .approve-btn.approved { background: #95a5a6; cursor: default; }
 
-        /* --- אזור תשובת התלמיד והערכה --- */
-        .student-section {
+        /* אזור תשובת תלמיד */
+        .student-area {
             margin-top: 20px;
             padding-top: 20px;
             border-top: 2px dashed #ddd;
-            opacity: 0.5; /* התחלתי כלא פעיל עד לאישור המחוון */
+            opacity: 0.5;
             pointer-events: none;
-            transition: opacity 0.3s;
         }
+        .student-area.active { opacity: 1; pointer-events: all; }
 
-        .student-section.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        .ai-feedback {
-            background-color: #e8f6f3;
+        .grade-box {
+            background: #e8f8f5;
             border: 1px solid #a2d9ce;
             padding: 15px;
+            margin-top: 15px;
             border-radius: 6px;
-            margin-top: 10px;
             color: #16a085;
+            display: none;
         }
-
-        .score-box {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-top: 10px;
-            text-align: left;
-        }
-
-        .original-text {
-            color: #7f8c8d;
-            font-size: 0.9em;
-            margin-bottom: 5px;
-        }
-
+        
+        .loading { text-align: center; color: var(--primary); display: none; }
     </style>
 </head>
 <body>
 
-    <div id="sidebar">
-        <h2><i class="fas fa-graduation-cap"></i> בדיקת מבחנים</h2>
+<aside>
+    <h2><i class="fas fa-cogs"></i> הגדרות</h2>
+    
+    <div class="input-group">
+        <label>Google Gemini API Key:</label>
+        <input type="password" id="apiKey" placeholder="הדבק כאן את המפתח...">
+    </div>
+
+    <div class="input-group">
+        <label>טעינת מבחן (DOCX/HTML):</label>
+        <input type="file" id="fileInput" accept=".docx, .html">
+    </div>
+
+    <div style="flex:1"></div>
+    
+    <div style="font-size:0.8rem; color:#666; margin-bottom:10px;">
+        * הניתוח מתבסס על מושגי "הכל בכף" ודרישות הבגרות.
+    </div>
+
+    <button id="analyzeBtn" class="primary-btn" disabled>
+        התחל בניתוח <i class="fas fa-play"></i>
+    </button>
+</aside>
+
+<main id="mainArea">
+    <div id="placeholder" style="text-align:center; color:#999; margin-top:100px;">
+        <i class="fas fa-file-invoice fa-4x"></i>
+        <h3>אנא טען קובץ והזן מפתח API כדי להתחיל</h3>
+    </div>
+    
+    <div id="loader" class="loading">
+        <i class="fas fa-spinner fa-spin fa-2x"></i>
+        <p>מנתח את המבחן ע"פ מושגי משרד החינוך...</p>
+    </div>
+
+    <div id="resultsContainer"></div>
+</main>
+
+<script type="module">
+    import { GoogleGenerativeAI } from "@google/generative-ai";
+
+    const fileInput = document.getElementById('fileInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const apiKeyInput = document.getElementById('apiKey');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const loader = document.getElementById('loader');
+    const placeholder = document.getElementById('placeholder');
+
+    let rawText = "";
+    let questionData = []; // To store the state
+
+    // 1. טעינת קובץ
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+
+        if (file.name.endsWith('.docx')) {
+            const arrayBuffer = await file.arrayBuffer();
+            const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+            rawText = result.value;
+        } else {
+            rawText = await file.text();
+        }
         
-        <div class="control-group">
-            <label for="file-upload">טעינת קובץ (DOCX/HTML)</label>
-            <input type="file" id="file-upload" accept=".html, .docx">
-            <div id="status-msg" style="margin-top:5px; font-size:0.8em;">לא נבחר קובץ</div>
-        </div>
+        checkReady();
+    });
 
-        <div style="font-size: 0.9em; line-height: 1.5; color: #bdc3c7;">
-            <p>1. המערכת תפרק את השאלות לפי מילות מטלה (הצג, נמק).</p>
-            <p>2. אשר/י את המחוון המוצע.</p>
-            <p>3. ערוך/י את תשובת התלמיד במידת הצורך.</p>
-            <p>4. קבל/י ציון והערכה.</p>
-        </div>
+    apiKeyInput.addEventListener('input', checkReady);
 
-        <button id="analyze-btn" disabled>התחל בניתוח <i class="fas fa-play"></i></button>
-    </div>
-
-    <div id="main-display">
-        <div id="content-area">
-            <div style="text-align: center; margin-top: 100px; color: #7f8c8d;">
-                <i class="fas fa-file-alt" style="font-size: 4em; margin-bottom: 20px;"></i>
-                <h2>אנא טען קובץ מבחן כדי להתחיל</h2>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // אלמנטים
-        const fileInput = document.getElementById('file-upload');
-        const contentArea = document.getElementById('content-area');
-        const statusMsg = document.getElementById('status-msg');
-        const analyzeBtn = document.getElementById('analyze-btn');
-
-        let rawText = "";
-
-        // --- לוגיקת טעינת קבצים (זהה לקוד הקודם) ---
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            statusMsg.textContent = 'טוען...';
-            
-            if (file.name.endsWith('.docx')) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    mammoth.extractRawText({arrayBuffer: evt.target.result})
-                        .then(result => {
-                            rawText = result.value;
-                            previewFile(rawText);
-                        })
-                        .catch(err => console.error(err));
-                };
-                reader.readAsArrayBuffer(file);
-            } else {
-                // הנחה לפשטות: קובץ טקסט/HTML
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    rawText = evt.target.result; // בפועל צריך לנקות תגיות HTML אם זה HTML
-                    previewFile(rawText);
-                };
-                reader.readAsText(file);
-            }
-        });
-
-        function previewFile(text) {
-            statusMsg.textContent = 'הקובץ נטען ✅';
-            statusMsg.style.color = '#2ecc71';
-            contentArea.innerHTML = `<div class="analysis-card"><h3>תצוגה מקדימה:</h3><p>${text.substring(0, 500)}...</p></div>`;
+    function checkReady() {
+        if (rawText && apiKeyInput.value.length > 10) {
             analyzeBtn.disabled = false;
         }
+    }
 
-        // --- לוגיקת הניתוח (SIMULATION) ---
-        analyzeBtn.addEventListener('click', function() {
-            contentArea.innerHTML = '<div style="text-align:center;"><i class="fas fa-spinner fa-spin fa-2x"></i><p>מבצע פירוק דידקטי וניתוח AI...</p></div>';
+    // 2. הפעלת הניתוח הראשוני (פירוק שאלות)
+    analyzeBtn.addEventListener('click', async () => {
+        placeholder.style.display = 'none';
+        loader.style.display = 'block';
+        resultsContainer.innerHTML = '';
+
+        const genAI = new GoogleGenerativeAI(apiKeyInput.value);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // הפרומפט שמשלב את "הכל בכף"
+        const prompt = `
+        אתה מורה מומחה לתקשורת וחברה המכין תלמידים לבגרות בישראל.
+        המשימה: נתח את הטקסט הבא (מבחן תלמיד) ופרק אותו בצורה דידקטית.
+        
+        עקרונות מנחים לניתוח (מתוך אתר "הכל בכף"):
+        1. התייחס להגדרות המדויקות של מושגים (למשל: ההבדל בין מיתוס לאתוס, סוכני חיברות, דגמי תקשורת).
+        2. זהה מילות מטלה: "הצג" (הגדרה תיאורטית), "הסבר" (קישור), "הדגם" (יישום), "נמק".
+        
+        עבור כל שאלה בטקסט:
+        1. זהה את השאלה.
+        2. זהה את תשובת התלמיד (אם קיימת בטקסט).
+        3. פרק את השאלה לתתי-סעיפים לפי מילות המטלה.
+        4. לכל תת-סעיף, כתוב "מחוון מוצע" המבוסס על הידע המקצועי של תוכנית הלימודים.
+
+        החזר את התשובה אך ורק בפורמט JSON חוקי במבנה הבא:
+        [
+          {
+            "id": 1,
+            "question": "text of question",
+            "student_answer": "text of answer found",
+            "parts": [
+              {
+                "verb": "הצג/הסבר...",
+                "instruction": "what to do",
+                "rubric": "detailed academic definition from Israeli syllabus"
+              }
+            ]
+          }
+        ]
+        
+        הטקסט לניתוח:
+        ${rawText}
+        `;
+
+        try {
+            const result = await model.generateContent(prompt);
+            const response = result.response.text();
             
-            // כאן תתבצע קריאה ל-API אמיתי. כרגע נשתמש במידע דמו (Mock Data)
-            setTimeout(() => {
-                renderAnalysis(mockAIResponse);
-            }, 1500);
+            // ניקוי ה-JSON (לפעמים מגיע עם Markdown)
+            const jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
+            questionData = JSON.parse(jsonStr);
+            
+            renderQuestions();
+        } catch (error) {
+            console.error(error);
+            alert('אירעה שגיאה בניתוח. בדוק את מפתח ה-API או את הקובץ.');
+        } finally {
+            loader.style.display = 'none';
+        }
+    });
+
+    // 3. הצגת השאלות למסך
+    function renderQuestions() {
+        resultsContainer.innerHTML = '';
+        
+        questionData.forEach((q, index) => {
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            
+            // כותרת שאלה
+            let html = `<div class="q-text">שאלה ${index + 1}: ${q.question}</div>`;
+            
+            // חלקים (מחוון)
+            html += `<div id="rubric-container-${index}">`;
+            q.parts.forEach((part, pIndex) => {
+                html += `
+                <div class="breakdown-item">
+                    <div>
+                        <span class="tag">${part.verb}</span> 
+                        <strong>${part.instruction}</strong>
+                    </div>
+                    <textarea id="rubric-${index}-${pIndex}">${part.rubric}</textarea>
+                    <button class="approve-btn" onclick="window.approveRubric(${index}, ${pIndex}, this)">
+                        <i class="fas fa-check"></i> אשר סעיף זה
+                    </button>
+                </div>`;
+            });
+            html += `</div>`;
+
+            // אזור תשובת תלמיד (חסום בהתחלה)
+            html += `
+            <div id="student-area-${index}" class="student-area">
+                <h4><i class="fas fa-user-graduate"></i> תשובת התלמיד והערכה</h4>
+                <p style="font-size:0.9rem; color:#777;">ניתן לערוך/לתקן את תשובת התלמיד לפני הבדיקה:</p>
+                <textarea id="student-ans-${index}">${q.student_answer || ''}</textarea>
+                
+                <button class="primary-btn" style="margin-top:10px; width:auto;" onclick="window.gradeQuestion(${index})">
+                    <i class="fas fa-calculator"></i> חשב ציון והערכה
+                </button>
+
+                <div id="grade-result-${index}" class="grade-box"></div>
+            </div>`;
+
+            card.innerHTML = html;
+            resultsContainer.appendChild(card);
+        });
+    }
+
+    // 4. לוגיקה: אישור מחוון
+    window.approveRubric = (qIndex, pIndex, btn) => {
+        const textarea = document.getElementById(`rubric-${qIndex}-${pIndex}`);
+        textarea.disabled = true;
+        textarea.style.backgroundColor = "#e8f8f5";
+        btn.textContent = "אושר";
+        btn.classList.add("approved");
+        
+        // בדיקה אם כל החלקים בשאלה אושרו
+        const totalParts = questionData[qIndex].parts.length;
+        const approvedParts = document.querySelectorAll(`#rubric-container-${qIndex} .approved`).length;
+        
+        if (approvedParts === totalParts) {
+            document.getElementById(`student-area-${qIndex}`).classList.add('active');
+        }
+    };
+
+    // 5. לוגיקה: חישוב ציון (קריאה שנייה ל-AI)
+    window.gradeQuestion = async (qIndex) => {
+        const studentAns = document.getElementById(`student-ans-${qIndex}`).value;
+        const resultBox = document.getElementById(`grade-result-${qIndex}`);
+        
+        // איסוף המחוון המאושר
+        let approvedRubric = "";
+        questionData[qIndex].parts.forEach((part, i) => {
+            const text = document.getElementById(`rubric-${qIndex}-${i}`).value;
+            approvedRubric += `- סעיף ${i+1} (${part.verb}): ${text}\n`;
         });
 
-        // --- נתוני דמו המדמים תשובה מה-AI ---
-        const mockAIResponse = [
-            {
-                id: 1,
-                question_text: "הסבר מהי קביעת סדר יום (Agenda Setting) והדגם כיצד היא באה לידי ביטוי בסיקור המלחמה.",
-                sub_tasks: [
-                    {
-                        verb: "הסבר",
-                        instruction: "מהי קביעת סדר יום",
-                        suggested_rubric: "התלמיד צריך להגדיר את התיאוריה: התקשורת לא אומרת לנו מה לחשוב, אלא על מה לחשוב. הבלטת נושאים מסוימים משפיעה על חשיבותם בעיני הציבור.",
-                    },
-                    {
-                        verb: "הדגם",
-                        instruction: "כיצד היא באה לידי ביטוי בסיקור המלחמה",
-                        suggested_rubric: "דוגמה קונקרטית: עיסוק נרחב בחטופים שגורם לציבור לראות בכך את הנושא החשוב ביותר, לעומת התעלמות מנושאים כלכליים.",
-                    }
-                ],
-                student_answer_raw: "קביעת סדר יום אומרת שהחדשות קובעות לנו על מה לדבר. למשל במלחמה כל הזמן מראים את החזית בצפון אז אנחנו דואגים מזה מאוד.",
-                ai_evaluation: "התלמיד נתן הגדרה חלקית (חסר האלמנט של 'חשיבות'). הדוגמה טובה ונכונה."
-            }
-        ];
+        resultBox.style.display = 'block';
+        resultBox.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מחשב ציון...';
 
-        // --- פונקציית הרינדור הראשית ---
-        function renderAnalysis(data) {
-            contentArea.innerHTML = ''; // ניקוי
+        const genAI = new GoogleGenerativeAI(apiKeyInput.value);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-            data.forEach((q, index) => {
-                const card = document.createElement('div');
-                card.className = 'analysis-card';
-                
-                // כותרת השאלה
-                card.innerHTML = `<div class="section-title"><i class="fas fa-question-circle"></i> שאלה ${index + 1}</div>
-                                  <div style="font-size:1.1em; margin-bottom:20px; font-weight:bold;">${q.question_text}</div>`;
+        const prompt = `
+        פעל כבודק בחינות בגרות קפדני בתקשורת וחברה.
+        
+        המחוון המאושר (הקריטריונים המדויקים):
+        ${approvedRubric}
+        
+        תשובת התלמיד (לאחר עריכת המורה):
+        ${studentAns}
+        
+        משימה:
+        1. השווה את התשובה למחוון סעיף אחר סעיף.
+        2. בדוק שימוש במינוח מקצועי נכון ("הכל בכף").
+        3. תן ציון מספרי (0-100).
+        4. כתוב משוב מילולי: מה היה טוב ומה חסר.
+        
+        החזר תשובה קצרה ב-HTML עם <b> להדגשות.
+        `;
 
-                // יצירת אזור המחוון (Rubric)
-                const rubricContainer = document.createElement('div');
-                let confirmedCount = 0; // למעקב כמה סעיפים אושרו
-
-                q.sub_tasks.forEach((task, i) => {
-                    const taskDiv = document.createElement('div');
-                    taskDiv.className = 'rubric-item';
-                    
-                    const taskId = `q${index}_t${i}`;
-                    
-                    taskDiv.innerHTML = `
-                        <div class="rubric-header"><i class="fas fa-list-ul"></i> סעיף ${i+1}: ${task.verb} - ${task.instruction}</div>
-                        <label>מחוון מוצע (AI):</label>
-                        <textarea id="rubric_${taskId}" class="editable-area">${task.suggested_rubric}</textarea>
-                        <button class="btn-confirm" onclick="confirmRubric('${taskId}', this)">
-                            <i class="fas fa-check"></i> אשר מחוון זה
-                        </button>
-                    `;
-                    rubricContainer.appendChild(taskDiv);
-                });
-                
-                card.appendChild(rubricContainer);
-
-                // יצירת אזור תשובת התלמיד (מוסתר בהתחלה)
-                const studentDiv = document.createElement('div');
-                studentDiv.id = `student_section_${index}`;
-                studentDiv.className = 'student-section';
-                studentDiv.innerHTML = `
-                    <div class="section-title"><i class="fas fa-user-edit"></i> תשובת התלמיד והערכה</div>
-                    <div class="original-text">תשובה מקורית: "${q.student_answer_raw}"</div>
-                    
-                    <label>ערוך את תשובת התלמיד (אם חסרות מילים או הניסוח לא ברור):</label>
-                    <textarea id="student_ans_${index}" class="editable-area">${q.student_answer_raw}</textarea>
-                    
-                    <button class="btn-confirm" onclick="evaluateAnswer(${index}, '${q.ai_evaluation}')">
-                        <i class="fas fa-gavel"></i> אשר עריכה וחשב ציון
-                    </button>
-                    
-                    <div id="result_${index}" style="display:none;"></div>
-                `;
-
-                card.appendChild(studentDiv);
-                contentArea.appendChild(card);
-            });
+        try {
+            const result = await model.generateContent(prompt);
+            resultBox.innerHTML = result.response.text();
+        } catch (error) {
+            resultBox.textContent = "שגיאה בחישוב הציון";
         }
+    };
+</script>
 
-        // --- לוגיקה: אישור מחוון ---
-        window.confirmRubric = function(id, btn) {
-            const textarea = document.getElementById(`rubric_${id}`);
-            textarea.disabled = true;
-            textarea.style.backgroundColor = "#e8f6f3"; // ירוק בהיר
-            btn.innerHTML = '<i class="fas fa-check-double"></i> המחוון אושר';
-            btn.classList.add('confirmed');
-            
-            // בדיקה האם כל הסעיפים בשאלה זו אושרו כדי לפתוח את אזור התלמיד
-            // (לצורך הפשטות כאן, נפתח מיד את אזור התלמיד של השאלה הרלוונטית)
-            const questionIndex = id.split('_')[0].replace('q', '');
-            document.getElementById(`student_section_${questionIndex}`).classList.add('active');
-        };
-
-        // --- לוגיקה: הערכת תשובה וציון ---
-        window.evaluateAnswer = function(index, aiFeedback) {
-            const textArea = document.getElementById(`student_ans_${index}`);
-            textArea.disabled = true;
-            
-            const resultDiv = document.getElementById(`result_${index}`);
-            
-            // סימולציה של חישוב ציון על סמך הטקסט הסופי
-            // במערכת אמיתית: שולחים את הטקסט הערוך + המחוון המאושר ל-AI
-            
-            resultDiv.style.display = 'block';
-            resultDiv.innerHTML = `
-                <div class="ai-feedback">
-                    <strong><i class="fas fa-robot"></i> ניתוח מערכת (מבוסס על המחוון שאושר):</strong><br>
-                    ${aiFeedback}
-                </div>
-                <div class="score-box">
-                    ציון מוצע: <span style="color: #27ae60;">85/100</span>
-                </div>
-            `;
-        };
-
-    </script>
 </body>
 </html>
